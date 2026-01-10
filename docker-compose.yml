@@ -1,67 +1,38 @@
 version: '3.8'
 
 services:
-  traefik:
-    image: traefik
-    restart: always
-    command:
-      - "--api=true"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.mytlschallenge.acme.tlschallenge=true"
-      - "--certificatesresolvers.mytlschallenge.acme.email=${SSL_EMAIL}"
-      - "--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - traefik_data:/letsencrypt
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - proxy
-
-  n8n:
-    image: docker.n8n.io/n8nio/n8n
+  supabase:
+    image: supabase-community/supabase:latest
     restart: always
     networks:
       - proxy
     labels:
       - traefik.enable=true
-      - traefik.http.routers.n8n.rule=Host(`${SUBDOMAIN}.${DOMAIN_NAME}`)
-      - traefik.http.routers.n8n.tls=true
-      - traefik.http.routers.n8n.entrypoints=websecure
-      - traefik.http.routers.n8n.tls.certresolver=mytlschallenge
-      - traefik.http.middlewares.n8n.headers.SSLRedirect=true
-      - traefik.http.middlewares.n8n.headers.STSSeconds=315360000
-      - traefik.http.middlewares.n8n.headers.browserXSSFilter=true
-      - traefik.http.middlewares.n8n.headers.contentTypeNosniff=true
-      - traefik.http.middlewares.n8n.headers.forceSTSHeader=true
-      - traefik.http.middlewares.n8n.headers.SSLHost=${DOMAIN_NAME}
-      - traefik.http.middlewares.n8n.headers.STSIncludeSubdomains=true
-      - traefik.http.middlewares.n8n.headers.STSPreload=true
-      - traefik.http.routers.n8n.middlewares=n8n@docker
+      - traefik.http.routers.supabase.rule=Host(`${SUPABASE_SUBDOMAIN}.${DOMAIN_NAME}`)
+      - traefik.http.routers.supabase.entrypoints=websecure
+      - traefik.http.routers.supabase.tls=true
+      - traefik.http.routers.supabase.tls.certresolver=mytlschallenge
+      - traefik.http.middlewares.supabase-headers.headers.SSLRedirect=true
+      - traefik.http.middlewares.supabase-headers.headers.STSSeconds=315360000
+      - traefik.http.middlewares.supabase-headers.headers.browserXSSFilter=true
+      - traefik.http.middlewares.supabase-headers.headers.contentTypeNosniff=true
+      - traefik.http.middlewares.supabase-headers.headers.forceSTSHeader=true
+      - traefik.http.middlewares.supabase-headers.headers.SSLHost=${DOMAIN_NAME}
+      - traefik.http.middlewares.supabase-headers.headers.STSIncludeSubdomains=true
+      - traefik.http.middlewares.supabase-headers.headers.STSPreload=true
+      - traefik.http.routers.supabase.middlewares=supabase-headers@docker
     environment:
-      - N8N_HOST=${SUBDOMAIN}.${DOMAIN_NAME}
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=https
-      - NODE_ENV=production
-      - WEBHOOK_URL=https://${SUBDOMAIN}.${DOMAIN_NAME}/
-      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE}
-      - N8N_PROXY_HOPS=1
+      - SUPABASE_POSTGRES_PASSWORD=${SUPABASE_DB_PASSWORD}
+      - SUPABASE_AUTH_ADMIN_EMAIL=${SUPABASE_ADMIN_EMAIL}
+      - SUPABASE_AUTH_ADMIN_PASSWORD=${SUPABASE_ADMIN_PASSWORD}
+      - SUPABASE_JWT_SECRET=${SUPABASE_JWT_SECRET}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
     volumes:
-      - n8n_data:/home/node/.n8n
-      - /local-files:/files
+      - supabase_/var/lib/postgresql/data
 
 volumes:
-  traefik_data:
-    external: true
-  n8n_data:
-    external: true
+  supabase_
 
 networks:
   proxy:
