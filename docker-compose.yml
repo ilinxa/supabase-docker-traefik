@@ -29,10 +29,10 @@ services:
       - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
       - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
     volumes:
-      - supabase_/var/lib/postgresql/data
+      - supabase_data:/var/lib/postgresql/data
 
 volumes:
-  supabase_:
+  supabase_data:
 
 networks:
   proxy:
