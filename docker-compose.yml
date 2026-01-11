@@ -32,7 +32,7 @@ services:
       - supabase_/var/lib/postgresql/data
 
 volumes:
-  supabase_
+  supabase_:
 
 networks:
   proxy:
